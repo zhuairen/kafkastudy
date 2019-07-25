@@ -1,13 +1,19 @@
-package com.fxn.kafkastudy.producer;
+package com.fxn.kafkastudy.consumerandindb;
 
+import com.alibaba.fastjson.JSONObject;
+import com.fxn.kafkastudy.bean.PersonBean;
 import org.apache.kafka.clients.producer.*;
 
 import java.util.Properties;
 import java.util.UUID;
 
-public class ProducerDemo {
+/**
+ * kafka push person infos
+ */
+public class PersonProducer {
 
     public static void main(String[] args) {
+
         Properties props = new Properties();
         // Kafka服务端的主机名和端口号
         props.put("bootstrap.servers", "localhost:9092");
@@ -38,31 +44,23 @@ public class ProducerDemo {
         /**
          * 当需要自定义分区时
          */
-        //props.put("partitioner.class","com.fxn.kafkastudy.producer.ProducerPartitioner");
+        props.put("partitioner.class","com.fxn.kafkastudy.threadproducer.RandomPartition");
 
         Producer<String, String> producer = new KafkaProducer<>(props);
 
-        for (int i = 0; i < 500; i++) {
-            producer.send(new ProducerRecord<>("topictest", Integer.toString(i), "----hello world-" + i));
+        for (int i = 0; i < 500000000; i++) {
+            PersonBean personBean = new PersonBean();
+            personBean.setAddress("浙江杭州");
+            personBean.setAge(12);
+            personBean.setHobby("pingpang");
+            personBean.setName("jack");
+            personBean.setId(i);
+            personBean.setTelePhone("18100171066");
+            producer.send(new ProducerRecord<>("kafkastudy10", Integer.toString(i), JSONObject.toJSONString(personBean)));
         }
 
-
-        //带callback的
-        for(int i=0;i<50000000;i++){
-            producer.send(new ProducerRecord<>("ten", UUID.randomUUID().toString()+"---"+i), new Callback() {
-                @Override
-                public void onCompletion(RecordMetadata recordMetadata, Exception e) {
-                    if(e!=null){
-                        System.out.println("错误");
-                        System.out.println(recordMetadata.offset()+"-----"+recordMetadata.partition());
-                    }else{
-                        System.out.println(recordMetadata.offset()+"-----"+recordMetadata.partition());
-
-                    }
-                }
-            });
-        }
         producer.close();
 
     }
+
 }
